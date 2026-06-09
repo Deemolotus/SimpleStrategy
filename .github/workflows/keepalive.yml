@@ -1,0 +1,37 @@
+name: Streamlit Keep-Alive
+
+on:
+  schedule:
+    # 每 4 小时触发一次 (足够覆盖 Streamlit 的 12 小时休眠判定)
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # 允许你在网页端手动点击运行
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 必须赋予写权限，让机器人能修改日志文件
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Random Sleep (防机器人检测)
+        run: |
+          # 随机等待 0 到 30 分钟 (1800秒)
+          DELAY=$((RANDOM % 1800))
+          echo "脚本将随机等待 $DELAY 秒..."
+          sleep $DELAY
+
+      - name: Update Log & Commit
+        run: |
+          # 1. 往日志文件中追加当前时间戳
+          echo "Awake at: $(date +'%Y-%m-%d %H:%M:%S')" >> streamlit_keepalive.log
+          
+          # 2. 配置官方机器人身份
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 3. 提交并推送到仓库
+          git add streamlit_keepalive.log
+          git commit -m "chore: keep streamlit awake [skip ci]"
+          git push
