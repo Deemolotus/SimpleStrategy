@@ -20,6 +20,31 @@ Data source: [Yahoo Finance](https://finance.yahoo.com/) via `yfinance`.
 
 Bands are **asymmetric**: the buy threshold uses `2.2×` std below the 20-day MA, while the sell threshold uses `2.0×` std above it. Buys are split into up to 3 equal “bullets” (tranches).
 
+When there is no equity opportunity, idle capital rotates into **Yinhua Rili / 银华日利 ETF (511880)** instead of sitting as cash.
+
+## Backtest results
+
+Script: [backtest.py](backtest.py). Window ≈ **2019-02-13 → 2026-08-10** (longest Yahoo history available for 512890).
+
+Setup: signal on close, fill next open; starting capital 3×¥33,333; idle sleeve earns **511880 cumulative NAV** returns (exchange last prices alone understate MMF yield).
+
+| | Strategy (low-vol ↔ MMF) | Buy&hold 512890 | 100% 511880 |
+|--|--|--|--|
+| Total return | **+88.1%** | +121.1% | +10.8% |
+| CAGR | **8.8%** | 11.2% | 1.4% |
+| Max drawdown | **-3.7%** | -16.5% | ~0% |
+| Sharpe | **1.61** | 0.73 | — |
+
+Notes: about **70%** of sessions are fully in the MMF sleeve; 18 full exits, 100% win rate, average exit ≈ +5.3% (many hit the upper-band rule before the 10% hard take-profit).
+
+Reproduce:
+
+```bash
+python backtest.py
+```
+
+> For research only — not investment advice. Trading costs, slippage, and taxes are omitted.
+
 ## Run locally
 
 ### 1. Install dependencies
@@ -50,6 +75,7 @@ The browser should open `http://localhost:8501`.
 .
 ├── streamlit_app.py    # Streamlit UI entrypoint
 ├── strategy.py         # Data fetch + signal logic
+├── backtest.py         # Low-vol ↔ 银华日利 rotation backtest
 ├── requirements.txt
 ├── LICENSE             # MIT
 ├── README.md           # Chinese
