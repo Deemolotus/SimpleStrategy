@@ -1,4 +1,11 @@
-"""Bollinger-band signal logic for 红利低波 ETF (512890)."""
+"""Bollinger-band signal logic for 红利低波 ETF (512890).
+
+Rules (checked in this order):
+1. If holding and return >= TARGET_PROFIT  -> SELL
+2. If holding and close > upper band       -> SELL
+3. If close < lower band and bullets left  -> BUY
+4. Otherwise                               -> HOLD
+"""
 
 from __future__ import annotations
 
@@ -9,8 +16,14 @@ from typing import Literal
 import pandas as pd
 import yfinance as yf
 
+# Yahoo Finance symbol for SSE-listed 红利低波 ETF
 TICKER = "512890.SS"
+
+# Hard take-profit threshold on cost basis (10%).
 TARGET_PROFIT = 0.10
+
+# Asymmetric Bollinger multipliers vs the 20-day mean:
+# buy zone is farther below MA20 than the sell zone is above it.
 LOWER_MULT = 2.2
 UPPER_MULT = 2.0
 
@@ -19,14 +32,18 @@ SignalType = Literal["BUY", "SELL", "HOLD"]
 
 @dataclass
 class AccountState:
-    position: int = 0
-    avg_cost: float = 0.0
-    bullets_left: int = 3
-    bullet_size_rmb: float = 33333.0
+    """User portfolio inputs used when evaluating the latest bar."""
+
+    position: int = 0  # shares currently held
+    avg_cost: float = 0.0  # average entry price (CNY)
+    bullets_left: int = 3  # remaining buy tranches ("bullets")
+    bullet_size_rmb: float = 33333.0  # CNY allocated to each buy tranche
 
 
 @dataclass
 class SignalResult:
+    """Latest trading recommendation plus the indicators that produced it."""
+
     signal: SignalType
     message: str
     detail: str
@@ -40,7 +57,7 @@ class SignalResult:
 
 
 def fetch_data(ticker: str = TICKER, retries: int = 3) -> pd.DataFrame:
-    """Fetch daily OHLC data from Yahoo Finance."""
+    """Fetch ~90 days of daily OHLC from Yahoo Finance, with simple retries."""
     last_error: Exception | None = None
 
     for attempt in range(retries):
@@ -49,6 +66,7 @@ def fetch_data(ticker: str = TICKER, retries: int = 3) -> pd.DataFrame:
             if df.empty:
                 raise ValueError("No data returned. Market may be closed or the API is unavailable.")
 
+            # yfinance may return MultiIndex columns (ticker × field); flatten to field names.
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
 
@@ -79,6 +97,7 @@ def fetch_data(ticker: str = TICKER, retries: int = 3) -> pd.DataFrame:
 
 
 def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
+    """Add 20-day MA and asymmetric Bollinger bands (upper/lower)."""
     out = df.copy()
     out["ma20"] = out["close"].rolling(window=20).mean()
     out["std20"] = out["close"].rolling(window=20).std()
@@ -88,6 +107,7 @@ def compute_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def evaluate_signal(df: pd.DataFrame, account: AccountState) -> SignalResult:
+    """Evaluate BUY / SELL / HOLD from the latest bar and account state."""
     latest = df.iloc[-1]
     trade_date = latest.name.strftime("%Y-%m-%d")
     close = float(latest["close"])
@@ -99,6 +119,7 @@ def evaluate_signal(df: pd.DataFrame, account: AccountState) -> SignalResult:
     if account.position > 0 and account.avg_cost > 0:
         current_return = (close - account.avg_cost) / account.avg_cost
 
+    # --- SELL checks (only when holding) ---
     if account.position > 0:
         if current_return is not None and current_return >= TARGET_PROFIT:
             return SignalResult(
@@ -125,7 +146,9 @@ def evaluate_signal(df: pd.DataFrame, account: AccountState) -> SignalResult:
                 current_return=current_return,
             )
 
+    # --- BUY: below lower band, and at least one buy tranche remaining ---
     if close < lower and account.bullets_left > 0:
+        # A-share ETF board lot is 100 shares; round down to whole lots.
         buy_shares = int((account.bullet_size_rmb / close) // 100) * 100
         return SignalResult(
             signal="BUY",

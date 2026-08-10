@@ -20,6 +20,7 @@ st.set_page_config(
     layout="wide",
 )
 
+# Map signal type -> (emoji, Streamlit callout method name)
 SIGNAL_STYLE = {
     "BUY": ("🟢", "success"),
     "SELL": ("🔴", "error"),
@@ -31,6 +32,7 @@ def main() -> None:
     st.title("红利低波 ETF 实盘信号")
     st.caption("512890 · 20 日布林带策略 · 数据来源 Yahoo Finance")
 
+    # Sidebar: account state the user must fill in before requesting a signal.
     with st.sidebar:
         st.header("账户状态")
         position = st.number_input("当前持股 (股)", min_value=0, value=0, step=100)
@@ -54,6 +56,7 @@ def main() -> None:
         bullet_size_rmb=float(bullet_size),
     )
 
+    # First visit with no prior result: prompt the user instead of auto-fetching.
     if not run and "last_result" not in st.session_state:
         st.info("在左侧填写账户状态，然后点击 **刷新信号** 获取最新指令。")
         return
@@ -63,6 +66,7 @@ def main() -> None:
             df = fetch_data(TICKER)
             df = compute_indicators(df)
             result = evaluate_signal(df, account)
+            # Cache so UI widgets can re-render without requiring another click.
             st.session_state["last_result"] = result
             st.session_state["last_df"] = df
         except Exception as exc:

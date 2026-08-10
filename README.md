@@ -7,6 +7,8 @@
 
 > **免责声明**：本工具仅供学习与研究，不构成任何投资建议。历史信号不保证未来收益，请自行承担交易风险。
 
+[English](README.en.md)
+
 ## 策略规则
 
 | 条件 | 信号 |
@@ -16,12 +18,13 @@
 | 收盘价 < 2.2× 下轨 且仍有子弹 | 🟢 加仓买入 |
 | 其他 | 🟡 持仓等待 / 空仓等待 |
 
+布林带为**非对称**设置：下轨用 `2.2×` 标准差，上轨用 `2.0×`。买入按最多 3 发「子弹」分批加仓。
+
 ## 本地运行
 
 ### 1. 安装依赖
 
 ```bash
-cd streamlit-app
 python -m venv .venv
 
 # Windows
@@ -44,15 +47,14 @@ streamlit run streamlit_app.py
 ## 项目结构
 
 ```
-streamlit-app/
-├── streamlit_app.py    # Streamlit 主入口（部署时指定此文件）
+.
+├── streamlit_app.py    # Streamlit 主入口
 ├── strategy.py         # 数据获取与信号逻辑
-├── requirements.txt    # Python 依赖
-├── LICENSE             # MIT 许可证
-├── README.md           # 本文件
-├── .gitignore
-└── .streamlit/
-    └── config.toml     # 主题与服务器配置
+├── requirements.txt
+├── LICENSE             # MIT
+├── README.md           # 中文（本文件）
+├── README.en.md        # English
+└── .github/workflows/  # 可选：Streamlit 保活定时任务
 ```
 
 ## 常见问题
@@ -64,7 +66,7 @@ A: Streamlit Cloud 服务器需要能访问 Yahoo Finance。偶发 API 限流时
 A: 不需要。本应用不使用 API Key 或数据库。
 
 **Q: 如何修改策略参数？**  
-A: 编辑 `strategy.py` 中的 `TARGET_PROFIT`、`LOWER_MULT`、`UPPER_MULT`，然后 push 到 GitHub，Streamlit 会自动重新部署。
+A: 编辑 `strategy.py` 中的 `TARGET_PROFIT`、`LOWER_MULT`、`UPPER_MULT`，然后重新部署即可。
 
 ## License
 
