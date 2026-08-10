@@ -41,53 +41,6 @@ streamlit run streamlit_app.py
 
 浏览器会自动打开 `http://localhost:8501`。
 
-## 部署到 Streamlit Community Cloud
-
-[Streamlit Community Cloud](https://share.streamlit.io/) 提供免费托管，适合公开分享。
-
-### 步骤 1：上传到 GitHub
-
-**方式 A — 单独仓库（推荐）**
-
-1. 在 GitHub 新建一个仓库，例如 `dividend-low-vol-signal`。
-2. 将 `streamlit-app/` 文件夹内的**全部文件**复制到仓库根目录（不要嵌套在子文件夹里）。
-3. 提交并 push：
-
-```bash
-git init
-git add .
-git commit -m "Add Streamlit signal app for 512890 ETF"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
-**方式 B — 作为 monorepo 子目录**
-
-也可以保留在 `Crowdness/Astock/streamlit-app/` 路径下，部署时在 Streamlit 设置里指定子目录即可（见下方）。
-
-### 步骤 2：连接 Streamlit Cloud
-
-1. 打开 [share.streamlit.io](https://share.streamlit.io/) 并用 GitHub 登录。
-2. 点击 **New app**。
-3. 填写：
-   - **Repository**：你的 GitHub 仓库
-   - **Branch**：`main`
-   - **Main file path**：
-     - 若文件在仓库根目录：`streamlit_app.py`
-     - 若在 monorepo 子目录：`Crowdness/Astock/streamlit-app/streamlit_app.py`
-4. 点击 **Deploy**。
-
-首次部署约需 2–5 分钟。完成后会得到一个公开 URL，例如：
-
-```
-https://your-app-name.streamlit.app
-```
-
-### 步骤 3：分享
-
-把 Streamlit 提供的链接发给其他人即可，无需安装 Python 或 exe。
-
 ## 项目结构
 
 ```
@@ -101,15 +54,6 @@ streamlit-app/
 └── .streamlit/
     └── config.toml     # 主题与服务器配置
 ```
-
-## 与桌面版 exe 的关系
-
-同目录下的 `../实盘信号.py` 是 Windows 桌面版（PyInstaller 打包）。  
-Streamlit 版复用了相同的策略逻辑，但增加了：
-
-- 浏览器 UI 与侧边栏参数输入
-- 近 60 日价格 / 布林带走势图
-- 在线公开访问，无需下载 exe
 
 ## 常见问题
 
